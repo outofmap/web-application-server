@@ -77,14 +77,19 @@ public class RequestHandler extends Thread {
 					log.debug("user/list and Logined=ture");
 					sb.append("<table>");
 					sb.append("<tr>");
-				//	while(users.iterator().)
-					
+					for(User user : users){
+						sb.append("<th>#</th>");
+						sb.append("<th>"+user.getUserId()+"</th>");
+						sb.append("<th>"+user.getName()+"</th>");
+						sb.append("<th>"+user.getEmail()+"</th>");
+					}
+					sb.append("</tr>");
 //					<tr>
 //                    <th>#</th> <th>사용자 아이디</th> <th>이름</th> <th>이메일</th><th></th>
 //                </tr>
 					
 					DataOutputStream dos = new DataOutputStream(out);
-					byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+					byte[] body = sb.toString().getBytes();
 					response200Header(dos, body.length);
 					responseBody(dos, body);
 					} else if(headerInfo.get("Cookie").equals("logined=false")){
