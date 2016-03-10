@@ -21,10 +21,12 @@
 * 
 
 ### 요구사항 3 - post 방식으로 회원가입
-* 
+* HashMap의 생성은 new HashMap();
+* BufferedReader br을 추출한 메소드의 인자로 넘기니 제대로 작동하지 않았다. 왜일까?
 
 ### 요구사항 4 - redirect 방식으로 이동
-* 
+* 302 임시 redirection
+
 
 ### 요구사항 5 - cookie
 * 
