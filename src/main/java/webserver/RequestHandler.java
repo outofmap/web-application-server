@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,9 +72,16 @@ public class RequestHandler extends Thread {
 					responseBody(dos, body);
 				}else if(url.equals("/user/list") ){
 					if(headerInfo.get("Cookie").equals("logined=true")){
+					Collection<User> users = DataBase.findAll();
 					url = "/user/list.html";
 					log.debug("user/list and Logined=ture");
-					//sb.append(str);
+					sb.append("<table>");
+					sb.append("<tr>");
+				//	while(users.iterator().)
+					
+//					<tr>
+//                    <th>#</th> <th>사용자 아이디</th> <th>이름</th> <th>이메일</th><th></th>
+//                </tr>
 					
 					DataOutputStream dos = new DataOutputStream(out);
 					byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
