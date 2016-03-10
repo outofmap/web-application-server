@@ -37,29 +37,19 @@ public class RequestHandler extends Thread {
 			// TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
 			String requestLine = br.readLine();
+			if (requestLine == null) {
+				return;
+			}
 			String url = lineParser(requestLine)[1];
 			String requestMethod = lineParser(requestLine)[0];
-			Map<String, String> headerInfo = new HashMap();
 			System.out.println("Request: " + requestMethod);
 			System.out.println("URL: " + url);
 			String param;
+			
 			StringBuilder sb = new StringBuilder();
 
-			// headerInfo 담기.
-			String line = br.readLine();
-			if (line == null) {
-				return;
-			}
-			while (!"".equals(line)) {
-				System.out.println(line);
-				String[] subHeader = line.split(": ");
-				String title = subHeader[0];
-				String headerData = subHeader[1];
-				log.debug(title);
-				log.debug(headerData);
-				headerInfo.put(title, headerData);
-				line = br.readLine();
-			}
+			Map<String, String> headerInfo = extractHeader(br);
+
 			// GET요청 처리
 			if (requestMethod.equalsIgnoreCase("GET")) {
 				int index = url.indexOf("?");
@@ -78,7 +68,6 @@ public class RequestHandler extends Thread {
 					sb.append("<table>");
 					sb.append("<tr>");
 					for(User user : users){
-						sb.append("<th>#</th>");
 						sb.append("<th>"+user.getUserId()+"</th>");
 						sb.append("<th>"+user.getName()+"</th>");
 						sb.append("<th>"+user.getEmail()+"</th>");
@@ -102,7 +91,13 @@ public class RequestHandler extends Thread {
 						responseBody(dos, body);
 					}
 					
-				} else{
+				} else if(url.endsWith(".css")){
+						DataOutputStream dos = new DataOutputStream(out);
+						byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+						response200CssHeader(dos, body.length);
+						responseBody(dos, body);
+				}
+				else{
 					DataOutputStream dos = new DataOutputStream(out);
 					byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
 					response200Header(dos, body.length);
@@ -170,6 +165,23 @@ public class RequestHandler extends Thread {
 		}
 	}
 
+	private Map<String, String> extractHeader(BufferedReader br) throws IOException {
+		Map<String, String> headerInfo = new HashMap();
+		String line = br.readLine();
+		do {
+			System.out.println(line);
+			String[] subHeader = line.split(": ");
+			String title = subHeader[0];
+			String headerData = subHeader[1];
+			log.debug(title);
+			log.debug(headerData);
+			headerInfo.put(title, headerData);
+			line = br.readLine();
+		} while(!"".equals(line));
+		return headerInfo;
+	}
+
+
 	private String[] lineParser(String line) {
 		String[] tokens = line.split(" ");
 		return tokens;
@@ -184,6 +196,17 @@ public class RequestHandler extends Thread {
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
+	}
+	private void response200CssHeader(DataOutputStream dos, int length) {
+		try {
+			dos.writeBytes("HTTP/1.1 200 OK \r\n");
+			dos.writeBytes("Content-Type: text/css;charset=utf-8\r\n");
+			dos.writeBytes("Content-Length: " + length + "\r\n");
+			dos.writeBytes("\r\n");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+		
 	}
 	private void responseLoginFailed200Header(DataOutputStream dos, int lengthOfBodyContent) {
 		try {
