@@ -35,34 +35,15 @@ public class RequestHandler extends Thread {
 		try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
 			// TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-			String firstline = br.readLine();
-			String url = lineParser(firstline)[1];
-			String request = lineParser(firstline)[0];
+			String requestLine = br.readLine();
+			String url = lineParser(requestLine)[1];
+			String requestMethod = lineParser(requestLine)[0];
 			Map<String, String> headerInfo = new HashMap();
-			System.out.println("Request: " + request);
+			System.out.println("Request: " + requestMethod);
 			System.out.println("URL: " + url);
 			String param;
-			// 유저 등록 코드
-			if (request.equalsIgnoreCase("GET")) {
-				int index = url.indexOf("?");
-				if (url.equals("/")) {
-					log.debug("index");
-					url = "/index.html";
-				}
-				if (index != -1) {
-					String requestPath = url.substring(0, index);
-					String prams = url.substring(index + 1);
-					HttpRequestUtils requestUtil = new HttpRequestUtils();
-					Map<String, String> parsedParms = HttpRequestUtils.parseQueryString(prams);
-					User user = new User(parsedParms.get("userId"), parsedParms.get("password"),
-							parsedParms.get("name"), parsedParms.get("email"));
-					System.out.println(user.toString());
-				}
-				DataOutputStream dos = new DataOutputStream(out);
-				byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
-				response200Header(dos, body.length);
-				responseBody(dos, body);
-			}
+			StringBuilder sb = new StringBuilder();
+
 			// headerInfo 담기.
 			String line = br.readLine();
 			if (line == null) {
@@ -78,8 +59,55 @@ public class RequestHandler extends Thread {
 				headerInfo.put(title, headerData);
 				line = br.readLine();
 			}
+			// GET요청 처리
+			if (requestMethod.equalsIgnoreCase("GET")) {
+				int index = url.indexOf("?");
+				if (url.equals("/")) {
+					log.debug("index");
+					url = "/index.html";
+					DataOutputStream dos = new DataOutputStream(out);
+					byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+					response200Header(dos, body.length);
+					responseBody(dos, body);
+				}else if(url.equals("/user/list") ){
+					if(headerInfo.get("Cookie").equals("logined=true")){
+					url = "/user/list.html";
+					log.debug("user/list and Logined=ture");
+					//sb.append(str);
+					
+					DataOutputStream dos = new DataOutputStream(out);
+					byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+					response200Header(dos, body.length);
+					responseBody(dos, body);
+					} else if(headerInfo.get("Cookie").equals("logined=false")){
+						url = "/user/list.html";
+						String redirectionURL = "/user/login.html";
+						log.debug("logined=false");
+						DataOutputStream dos = new DataOutputStream(out);
+						byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+						response302Header(dos, body.length, redirectionURL);
+						responseBody(dos, body);
+					}
+					
+				} else{
+					DataOutputStream dos = new DataOutputStream(out);
+					byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+					response200Header(dos, body.length);
+					responseBody(dos, body);
+					
+				}
+				//GETmethod에 queryString이 있을 때
+				if (index != -1) {
+					String requestPath = url.substring(0, index);
+					String queryString = url.substring(index + 1);
+					HttpRequestUtils requestUtil = new HttpRequestUtils();
+					Map<String, String> parsedParms = HttpRequestUtils.parseQueryString(queryString);
+					User user = new User(parsedParms.get("userId"), parsedParms.get("password"),
+							parsedParms.get("name"), parsedParms.get("email"));
+				}
+			}
 
-			if (request.equalsIgnoreCase("POST")) {
+			if (requestMethod.equalsIgnoreCase("POST")) {
 				IOUtils ioUtils = new IOUtils();
 				int contentLength = Integer.parseInt(headerInfo.get("Content-Length"));
 				param = ioUtils.readData(br, contentLength);
@@ -90,9 +118,10 @@ public class RequestHandler extends Thread {
 							parsedParms.get("name"), parsedParms.get("email"));
 					System.out.println(user.toString());
 					DataBase.addUser(user);
+					String redirectUrl = "../../index.html";
 					DataOutputStream dos = new DataOutputStream(out);
 					byte[] body = Files.readAllBytes(new File("./webapp" + "/index.html").toPath());
-					response302Header(dos, body.length);
+					response302Header(dos, body.length, redirectUrl);
 					responseBody(dos, body);
 				} else if (url.equals("/user/login")) {
 					String userId = parsedParms.get("userId");
@@ -156,12 +185,11 @@ public class RequestHandler extends Thread {
 	}
 	
 
-	private void response302Header(DataOutputStream dos, int lengthOfBodyContent) {
+	private void response302Header(DataOutputStream dos, int lengthOfBodyContent, String redirectionURL) {
 		// localhost써야할까?
-		String url = "localhost:8080/index.html";
 		try {
 			dos.writeBytes("HTTP/1.1 302 Found \r\n");
-			dos.writeBytes("Location: " + "../../index.html" + "\r\n");
+			dos.writeBytes("Location: " +redirectionURL + "\r\n");
 			dos.writeBytes("\r\n");
 		} catch (IOException e) {
 			log.error(e.getMessage());

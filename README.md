@@ -26,10 +26,12 @@
 
 ### 요구사항 4 - redirect 방식으로 이동
 * 302 임시 redirection
-
+* 서버가 header에 Location 이라는 정보를 주고 302코드를 클라이언트에 전달하면, 클라이언트는 302를 보고 redirection이라는 것을 알고, Location에 있는 url로 다시 요청을 보낸다. 
+* 그래서 302는 결국 두 번의 요청을 보내게 된다.  
 
 ### 요구사항 5 - cookie
-* 
+* log in여부는 cookie를 활용해 알려줄 수 있다. 
+* cookie는 서버에서 생성해 client에게 준다. (클라이언트에서 자바스크립트에서 생성해 서버로 줄 수도 있다.)
 
 ### 요구사항 6 - stylesheet 적용
 * 
